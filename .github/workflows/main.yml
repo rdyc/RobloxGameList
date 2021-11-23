@@ -26,6 +26,30 @@ jobs:
     # changes the base-tag in index.html from '/' to 'roblox-game-list' to match GitHub Pages repository subdirectory
     - name: Change base-tag in index.html from / to roblox-game-list
       run: sed -i 's/<base href="\/" \/>/<base href="\/roblox-game-list\/" \/>/g' release/wwwroot/index.html
+      
+    # change all framework files *.dll to *.bin
+    - name: Renaming dll to bin
+      run: |
+        cd release/wwwroot
+        for f in _framework/_bin/*; do mv "$f" "`echo $f | sed -e 's/\.dll/.bin/g'`"; done
+        sed -i 's/\.dll"/.bin"/g' _framework/blazor.boot.json
+        sed -i 's/\.dll"/.bin"/g' service-worker-assets.js
+
+    # remove pre-compressed files
+    - name: Remove pre-compressed
+      run: |
+        cd release/wwwroot
+        rm service-worker-assets.js.*
+        rm _framework/blazor.boot.json.*
+
+    # fixing integrity check
+    - name: Fixing integrity check
+      run: |
+        cd release/wwwroot
+        apt update && apt install -y --no-install-recommends jq
+        cp ../../scripts/integrity.sh .
+        chmod +x integrity.sh && ./integrity.sh
+        rm integrity.sh
     
     # copy index.html to 404.html to serve the same file when a file is not found
     - name: copy index.html to 404.html
